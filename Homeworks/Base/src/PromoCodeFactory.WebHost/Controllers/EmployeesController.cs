@@ -70,5 +70,60 @@ namespace PromoCodeFactory.WebHost.Controllers
 
             return employeeModel;
         }
+
+        /// <summary>
+        /// Создать нового сотрудника
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<EmployeeResponse>> CreateEmployeeAsync([FromBody] Employee employee)
+        {
+
+            await _employeeRepository.AddAsync(employee);
+            var employeeModel = new EmployeeResponse()
+            {
+                Id = employee.Id,
+                Email = employee.Email,
+                Roles = employee.Roles.Select(x => new RoleItemResponse()
+                {
+                    Name = x.Name,
+                    Description = x.Description
+                }).ToList(),
+                FullName = employee.FullName,
+                AppliedPromocodesCount = employee.AppliedPromocodesCount
+            };
+            return employeeModel;
+        }
+
+        /// <summary>
+        /// Обновить данные сотрудника
+        /// </summary>
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateEmployeeAsync(Guid id, [FromBody] Employee newEmployee)
+        {
+
+            var employee = await _employeeRepository.GetByIdAsync(newEmployee.Id);
+            if (employee == null)
+                return NotFound();
+
+            newEmployee.Id = id;
+            await _employeeRepository.UpdateAsync(newEmployee);
+            return Ok();
+
+        }
+
+        /// <summary>
+        /// Удалить сотрудника
+        /// </summary>
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> DeleteEmployeeAsync(Guid id)
+        {
+
+            var employee = await _employeeRepository.GetByIdAsync(id);
+            if (employee == null)
+                return NotFound();
+            await _employeeRepository.DeleteAsync(id);
+            return Ok();
+
+        }
     }
 }
