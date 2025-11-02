@@ -75,22 +75,26 @@ namespace PromoCodeFactory.WebHost.Controllers
         /// Создать нового сотрудника
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<EmployeeResponse>> CreateEmployeeAsync([FromBody] Employee employee)
+        public async Task<ActionResult<EmployeeResponse>> CreateEmployeeAsync([FromBody] EmployeeResponse employeeModel)
         {
 
-            await _employeeRepository.AddAsync(employee);
-            var employeeModel = new EmployeeResponse()
+            string[] name = employeeModel.FullName.Split(' ');
+            var employee = new Employee()
             {
-                Id = employee.Id,
-                Email = employee.Email,
-                Roles = employee.Roles.Select(x => new RoleItemResponse()
+                Id = employeeModel.Id,
+                Email = employeeModel.Email,
+                Roles = employeeModel.Roles.Select(x => new Role()
                 {
                     Name = x.Name,
                     Description = x.Description
                 }).ToList(),
-                FullName = employee.FullName,
-                AppliedPromocodesCount = employee.AppliedPromocodesCount
+                FirstName = name[0],
+                LastName = name[1],
+                AppliedPromocodesCount = employeeModel.AppliedPromocodesCount
             };
+
+            await _employeeRepository.AddAsync(employee);
+            
             return employeeModel;
         }
 
@@ -101,11 +105,16 @@ namespace PromoCodeFactory.WebHost.Controllers
         public async Task<IActionResult> UpdateEmployeeAsync(Guid id, [FromBody] Employee newEmployee)
         {
 
-            var employee = await _employeeRepository.GetByIdAsync(newEmployee.Id);
+            var employee = await _employeeRepository.GetByIdAsync(id);
             if (employee == null)
                 return NotFound();
 
-            newEmployee.Id = id;
+            employee.FirstName = newEmployee.FirstName;
+            employee.LastName = newEmployee.LastName;
+            employee.Email = newEmployee.Email;
+            employee.Roles = newEmployee.Roles;
+            employee.AppliedPromocodesCount = newEmployee.AppliedPromocodesCount;
+
             await _employeeRepository.UpdateAsync(newEmployee);
             return Ok();
 
